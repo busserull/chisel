@@ -47,6 +47,7 @@ class MyModule(val incrementBy: Int) extends chisel3.Module {
     new Bundle {
       val dataIn  = Input(UInt(32.W))
       val dataOut = Output(UInt(32.W))
+      val offset = Input(UInt(32.W))
     }
   )
 
@@ -54,7 +55,15 @@ class MyModule(val incrementBy: Int) extends chisel3.Module {
     This is the body of MyModule
     */
 
-  io.dataOut := 0.U
+  val reg_a = RegInit(2.U(4.W))
+  val reg_b = RegInit(1.U(4.W))
+
+  reg_a := reg_b
+  reg_b := reg_a
+
+  io.dataOut := reg_a + io.offset
+
+  // io.dataOut := io.dataIn + incrementBy.U
 
   // The commented code is supplied so that you should have an idea of what you should
   // end up with when you're through the introductionary section.
@@ -77,6 +86,17 @@ class MyModule(val incrementBy: Int) extends chisel3.Module {
 // The tests we want to run on the module
 class TestRunner(c: MyModule) extends chisel3.iotesters.PeekPokeTester(c)  {
   warn("testRunner executing...")
+
+  poke(c.io.offset, 12.U)
+
+  for(i <- 0 until 10){
+    poke(c.io.dataIn, i.U)
+
+    step(1)
+
+    val o = peek(c.io.dataOut)
+    say(s"Observed state in loop at $i: $o")
+  }
 
   /**
     This is the body of the TestRunner
