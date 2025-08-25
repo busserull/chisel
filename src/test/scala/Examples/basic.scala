@@ -45,6 +45,24 @@ class MyIncrementTest extends FlatSpec with Matchers {
 }
 
 
+// class MyIncrementTwice(incrementBy: Int) extends Module {
+//   val io = IO(
+//     new Bundle {
+//       val dataIn = Input(UInt(32.W))
+//       val dataOut = Output(UInt(32.W))
+//     }
+//   )
+
+//   val first = Module(new MyIncrement(incrementBy))
+//   val second = Module(new MyIncrement(incrementBy))
+
+//   first.io.dataIn := io.dataIn
+//   second.io.dataIn := first.io.dataOut
+
+//   io.dataOut := second.io.dataOut
+// }
+
+
 class MyIncrementManyTest extends FlatSpec with Matchers {
 
   class MyIncrement(val incrementBy: Int) extends Module {
