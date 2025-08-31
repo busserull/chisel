@@ -20,19 +20,22 @@ class MatMul(val rowDimsA: Int, val colDimsA: Int) extends MultiIOModule {
       val reading = Output(Bool())
       val row = Output(UInt(32.W))
       val col = Output(UInt(32.W))
+      val comp_row = Output(UInt(32.W))
+      val comp_col = Output(UInt(32.W))
     }
   )
 
-  // Matrices
+  // Matrices and Dot product engine
 
   val mat_a = Module(new Matrix(rowDimsA, colDimsA))
   val mat_b = Module(new Matrix(rowDimsA, colDimsA))
 
   // val mat_out = Module(new Matrix(rowDimsA, rowDimsA))
+  // val mult = Module(new DotProd(rowDimsA))
 
   // Read matrix A and B
 
-  val reading = Reg(Bool(), true.B)
+  val reading = RegInit(Bool(), true.B)
 
   val row = RegInit(UInt(32.W), 0.U)
   val (col, next_row) = Counter(true.B, colDimsA)
@@ -55,11 +58,21 @@ class MatMul(val rowDimsA: Int, val colDimsA: Int) extends MultiIOModule {
   when(row === rowDimsA.U - 1.U && next_row){
     reading := false.B
   }
+
+  // Calculate matrix multiplication
+
+  val comp_row = RegInit(UInt(32.W), 0.U)
+  val (comp_col, next_comp_row) = Counter(!reading, rowDimsA)
   
+  when(next_comp_row){
+    comp_row := comp_row + 1.U
+  }
 
 
   debug.row := row
   debug.col := col
+  debug.comp_row := comp_row
+  debug.comp_col := comp_col
   debug.reading := reading
 
   io.dataOut := io.dataInA + io.dataInB

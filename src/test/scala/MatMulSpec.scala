@@ -39,6 +39,14 @@ class MatMulSpec extends FlatSpec with Matchers {
       } should be(true)
     )
   }
+
+  it should "Start computational iteration once input is done" in {
+    wrapTester(
+      chisel3.iotesters.Driver(() => new MatMul(rowDims, colDims)) { c =>
+        new StartIteratingAfterInput(c)
+      } should be(true)
+    )
+  }
 }
 
 object MatMulTests {
@@ -51,6 +59,29 @@ object MatMulTests {
     val mC = matrixMultiply(mA, mB.transpose)
 
 
+  }
+
+  class StartIteratingAfterInput(c: MatMul) extends PeekPokeTester(c) {
+    val matrix = genMatrix(c.rowDimsA, c.colDimsA)
+
+    for(row <- 0 until c.rowDimsA){
+      for(col <- 0 until c.colDimsA){
+        poke(c.io.dataInA, matrix(row)(col))
+        poke(c.io.dataInB, matrix(row)(col))
+
+        expect(c.debug.comp_row, 0.U, "Computational row changed before input complete")
+        expect(c.debug.comp_col, 0.U, "Computational column changed before input complete")
+
+        step(1)
+      }
+    }
+
+    for(i <- 0 until 12){
+      expect(c.debug.comp_row, i / c.rowDimsA, "Computational row not correctly incremented")
+      expect(c.debug.comp_col, i % c.rowDimsA, "Computational column not correctly incremented")
+
+      step(1)
+    }
   }
 
   class StopReadingAfterInput(c: MatMul) extends PeekPokeTester(c) {
