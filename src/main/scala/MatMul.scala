@@ -17,7 +17,7 @@ class MatMul(val rowDimsA: Int, val colDimsA: Int) extends MultiIOModule {
 
   val debug = IO(
     new Bundle {
-      val signal = Output(Bool())
+      val reading = Output(Bool())
       val row = Output(UInt(32.W))
       val col = Output(UInt(32.W))
     }
@@ -27,6 +27,8 @@ class MatMul(val rowDimsA: Int, val colDimsA: Int) extends MultiIOModule {
 
   val mat_a = Module(new Matrix(rowDimsA, colDimsA))
   val mat_b = Module(new Matrix(rowDimsA, colDimsA))
+
+  // val mat_out = Module(new Matrix(rowDimsA, rowDimsA))
 
   // Read matrix A and B
 
@@ -50,11 +52,15 @@ class MatMul(val rowDimsA: Int, val colDimsA: Int) extends MultiIOModule {
   mat_a.io.writeEnable := reading
   mat_b.io.writeEnable := reading
 
+  when(row === rowDimsA.U - 1.U && next_row){
+    reading := false.B
+  }
+  
 
 
   debug.row := row
   debug.col := col
-  debug.signal := false.B
+  debug.reading := reading
 
   io.dataOut := io.dataInA + io.dataInB
   io.outputValid := true.B
