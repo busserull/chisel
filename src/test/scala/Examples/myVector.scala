@@ -21,19 +21,7 @@ import TestUtils._
 
 //   val values = List(1, 2, 3, 4)
 
-//   io.out := values(io.idx)
-// }
-
-
-// Does not compile
-// class MyVector() extends Module {
-//   val io = IO(
-//     new Bundle {
-//       val idx = Input(UInt(32.W))
-//       val out = Output(UInt(32.W))
-//     }
-//   )
-
+// OR
 //   val values = Vec(1, 2, 3, 4)
 
 //   io.out := values(io.idx)
