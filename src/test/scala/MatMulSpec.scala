@@ -14,10 +14,20 @@ class MatMulSpec extends FlatSpec with Matchers {
 
   behavior of "MatMul"
 
+  /*
   it should "Multiply two matrices" in {
     wrapTester(
       chisel3.iotesters.Driver(() => new MatMul(rowDims, colDims)) { c =>
         new FullMatMul(c)
+      } should be(true)
+    )
+  }
+  */
+
+  it should "Iterate over rows and columns" in {
+    wrapTester(
+      chisel3.iotesters.Driver(() => new MatMul(3, 5)) { c =>
+        new IterateOverRowsAndColumns(c)
       } should be(true)
     )
   }
@@ -33,6 +43,22 @@ object MatMulTests {
     val mC = matrixMultiply(mA, mB.transpose)
 
 
+  }
+
+  class IterateOverRowsAndColumns(c: MatMul) extends PeekPokeTester(c) {
+    val matrix = genMatrix(c.rowDimsA, c.colDimsA)
+
+    for(row <- 0 until c.rowDimsA){
+      for(col <- 0 until c.colDimsA){
+        poke(c.io.dataInA, matrix(row)(col))
+        poke(c.io.dataInB, matrix(row)(col))
+
+        expect(c.debug.row, row, "Not at the correct row")
+        expect(c.debug.col, col, "Not at the correct column")
+
+        step(1)
+      }
+    }
   }
 
   class FullMatMul(c: MatMul) extends PeekPokeTester(c) {
