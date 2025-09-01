@@ -14,7 +14,6 @@ class MatMulSpec extends FlatSpec with Matchers {
 
   behavior of "MatMul"
 
-  /*
   it should "Multiply two matrices" in {
     wrapTester(
       chisel3.iotesters.Driver(() => new MatMul(rowDims, colDims)) { c =>
@@ -22,8 +21,8 @@ class MatMulSpec extends FlatSpec with Matchers {
       } should be(true)
     )
   }
-  */
 
+  /*
   it should "Multiply two predefined matrices" in {
     wrapTester(
       chisel3.iotesters.Driver(() => new MatMul(2, 3)) { c =>
@@ -32,7 +31,6 @@ class MatMulSpec extends FlatSpec with Matchers {
     )
   }
 
-  /*
   it should "Iterate over rows and columns" in {
     wrapTester(
       chisel3.iotesters.Driver(() => new MatMul(rowDims, colDims)) { c =>
@@ -72,26 +70,26 @@ object MatMulTests {
         A = [1, 2, 3;
              4, 5, 6]
 
-        B = [1, 4;     B' = [1, 2, 3;
-             2, 0;           4, 0, 6]
-             3, 6]
+        B = [7, 10;     B' = [ 7,  8,  9;
+             8, 11;           10, 11, 12]
+             9, 12]
 
         Should be C
 
-        C = [14, 22;
-             32, 52]
+        C = [ 50,  68;
+             122, 167]
     */
 
-    val input = List((1.U, 1.U), (2.U, 4.U), (3.U, 2.U), (4.U, 0.U), (5.U, 3.U), (6.U, 6.U))
+    val input = List((1.U, 7.U), (2.U, 8.U), (3.U, 9.U), (4.U, 10.U), (5.U, 11.U), (6.U, 12.U))
 
-    val wanted = List(14.U, 22.U, 32.U, 52.U)
+    val wanted = List(50.U, 68.U, 122.U, 167.U)
 
     for((a, b) <- input){
       poke(c.io.dataInA, a)
       poke(c.io.dataInB, b)
       expect(c.io.outputValid, false, "Incorrectly flagged as valid during input")
 
-      println(s"---> Re/I/R/C ${peek(c.debug.reading)} ${peek(c.debug.iterate_complete)} ${peek(c.debug.row)} ${peek(c.debug.col)}")
+      println(s"[${peek(c.debug.cycle)}] ---> R/Or/C - a/b/Acc ${peek(c.debug.row)} ${peek(c.debug.out_row)} ${peek(c.debug.col)} - ${peek(c.debug.a)} ${peek(c.debug.b)} ${peek(c.io.dataOut)}")
 
       step(1)
     }
@@ -100,14 +98,16 @@ object MatMulTests {
       for(_ <- 0 until 3 - 1){
         expect(c.io.outputValid, false, "Valid output mistimed")
 
-      println(s"---> Re/I/R/C ${peek(c.debug.reading)} ${peek(c.debug.iterate_complete)} ${peek(c.debug.row)} ${peek(c.debug.col)}")
+      println(s"[${peek(c.debug.cycle)}] ---> R/Or/C - a/b/Acc ${peek(c.debug.row)} ${peek(c.debug.out_row)} ${peek(c.debug.col)} - ${peek(c.debug.a)} ${peek(c.debug.b)} ${peek(c.io.dataOut)}")
         step(1)
       }
 
+      println(s"[${peek(c.debug.cycle)}] ---> R/Or/C - a/b/Acc ${peek(c.debug.row)} ${peek(c.debug.out_row)} ${peek(c.debug.col)} - ${peek(c.debug.a)} ${peek(c.debug.b)} ${peek(c.io.dataOut)}")
       expect(c.io.outputValid, true, "Valid output timing is wrong")
       expect(c.io.dataOut, wanted(element), "Wrong value calculated")
 
-      println(s"---> Re/I/R/C ${peek(c.debug.reading)} ${peek(c.debug.iterate_complete)} ${peek(c.debug.row)} ${peek(c.debug.col)}")
+      println("")
+
       step(1)
     }
   }

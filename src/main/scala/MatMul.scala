@@ -19,10 +19,16 @@ class MatMul(val rowDimsA: Int, val colDimsA: Int) extends MultiIOModule {
     new Bundle {
       val reading = Output(Bool())
       val row = Output(UInt(32.W))
+      val out_row = Output(UInt(32.W))
       val col = Output(UInt(32.W))
       val iterate_complete = Output(Bool())
+      val cycle = Output(UInt(32.W))
+      val a = Output(UInt(32.W))
+      val b = Output(UInt(32.W))
     }
   )
+
+  val (cycle, _) = Counter(true.B, 255)
 
   // Matrices
 
@@ -32,7 +38,7 @@ class MatMul(val rowDimsA: Int, val colDimsA: Int) extends MultiIOModule {
 
   // Multiplier
 
-  val dot = Module(new DotProd(colDimsA))
+  val acc = RegInit(0.U(32.W))
 
 
   // Reading controller
@@ -42,10 +48,8 @@ class MatMul(val rowDimsA: Int, val colDimsA: Int) extends MultiIOModule {
   val (col, next_row) = Counter(true.B, colDimsA)
   val (row, iterate_complete) = Counter(next_row, rowDimsA)
 
-  val (out_row, _) = Counter(iterate_complete && dot.io.outputValid, rowDimsA)
-  // val (out_col, )
-
-
+  val out_row = RegInit(0.U(32.W))
+  val (_, next_out_row) = Counter(!reading, rowDimsA * colDimsA)
 
 
   // Read matrix A and B
@@ -67,24 +71,29 @@ class MatMul(val rowDimsA: Int, val colDimsA: Int) extends MultiIOModule {
 
   // Calculate matrix multiplication
 
+  when(next_out_row){
+    out_row := out_row + 1.U
+  }
+
   when(!reading){
     mat_a.io.rowIdx := out_row
   }
+  
+  acc := acc + mat_a.io.dataOut * mat_b.io.dataOut
 
-  dot.io.dataInA := mat_a.io.dataOut
-  dot.io.dataInB := mat_b.io.dataOut
+  io.dataOut := acc + mat_a.io.dataOut * mat_b.io.dataOut
+  io.outputValid := !reading && next_row
 
-  io.dataOut := dot.io.dataOut
-  io.outputValid := dot.io.outputValid && !reading
+  when(next_row){
+    acc := 0.U
+  }
 
-
-  // when(mult.io.outputValid){
-  //   io.dataOut := mult.io.dataOut
-  // }
-
-
+  debug.a := mat_a.io.dataOut
+  debug.b := mat_b.io.dataOut
   debug.row := row
+  debug.out_row := out_row
   debug.col := col
   debug.reading := reading
   debug.iterate_complete := iterate_complete
+  debug.cycle := cycle
 }
