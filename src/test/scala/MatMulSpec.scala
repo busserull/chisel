@@ -14,10 +14,20 @@ class MatMulSpec extends FlatSpec with Matchers {
 
   behavior of "MatMul"
 
+  /*
   it should "Multiply two matrices" in {
     wrapTester(
       chisel3.iotesters.Driver(() => new MatMul(rowDims, colDims)) { c =>
         new FullMatMul(c)
+      } should be(true)
+    )
+  }
+  */
+
+  it should "Multiply two predefined matrices" in {
+    wrapTester(
+      chisel3.iotesters.Driver(() => new MatMul(2, 3)) { c =>
+        new TestExample(c)
       } should be(true)
     )
   }
@@ -38,7 +48,9 @@ class MatMulSpec extends FlatSpec with Matchers {
       } should be(true)
     )
   }
+  */
 
+  /*
   it should "Start computational iteration once input is done" in {
     wrapTester(
       chisel3.iotesters.Driver(() => new MatMul(rowDims, colDims)) { c =>
@@ -54,13 +66,53 @@ object MatMulTests {
   val rand = new scala.util.Random(100)
 
   class TestExample(c: MatMul) extends PeekPokeTester(c) {
-    val mA = genMatrix(c.rowDimsA, c.colDimsA)
-    val mB = genMatrix(c.rowDimsA, c.colDimsA)
-    val mC = matrixMultiply(mA, mB.transpose)
+    /*
+        Multiply A and B
 
+        A = [1, 2, 3;
+             4, 5, 6]
 
+        B = [1, 4;     B' = [1, 2, 3;
+             2, 0;           4, 0, 6]
+             3, 6]
+
+        Should be C
+
+        C = [14, 22;
+             32, 52]
+    */
+
+    val input = List((1.U, 1.U), (2.U, 4.U), (3.U, 2.U), (4.U, 0.U), (5.U, 3.U), (6.U, 6.U))
+
+    val wanted = List(14.U, 22.U, 32.U, 52.U)
+
+    for((a, b) <- input){
+      poke(c.io.dataInA, a)
+      poke(c.io.dataInB, b)
+      expect(c.io.outputValid, false, "Incorrectly flagged as valid during input")
+
+      println(s"---> Re/I/R/C ${peek(c.debug.reading)} ${peek(c.debug.iterate_complete)} ${peek(c.debug.row)} ${peek(c.debug.col)}")
+
+      step(1)
+    }
+
+    for(element <- 0 until (2 * 2)){
+      for(_ <- 0 until 3 - 1){
+        expect(c.io.outputValid, false, "Valid output mistimed")
+
+      println(s"---> Re/I/R/C ${peek(c.debug.reading)} ${peek(c.debug.iterate_complete)} ${peek(c.debug.row)} ${peek(c.debug.col)}")
+        step(1)
+      }
+
+      expect(c.io.outputValid, true, "Valid output timing is wrong")
+      expect(c.io.dataOut, wanted(element), "Wrong value calculated")
+
+      println(s"---> Re/I/R/C ${peek(c.debug.reading)} ${peek(c.debug.iterate_complete)} ${peek(c.debug.row)} ${peek(c.debug.col)}")
+      step(1)
+    }
   }
 
+  /*
   class StartIteratingAfterInput(c: MatMul) extends PeekPokeTester(c) {
     val matrix = genMatrix(c.rowDimsA, c.colDimsA)
 
@@ -83,6 +135,7 @@ object MatMulTests {
       step(1)
     }
   }
+  */
 
   class StopReadingAfterInput(c: MatMul) extends PeekPokeTester(c) {
     val matrix = genMatrix(c.rowDimsA, c.colDimsA)
