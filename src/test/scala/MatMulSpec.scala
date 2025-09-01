@@ -14,7 +14,6 @@ class MatMulSpec extends FlatSpec with Matchers {
 
   behavior of "MatMul"
 
-  /*
   it should "Multiply two matrices" in {
     wrapTester(
       chisel3.iotesters.Driver(() => new MatMul(rowDims, colDims)) { c =>
@@ -22,8 +21,8 @@ class MatMulSpec extends FlatSpec with Matchers {
       } should be(true)
     )
   }
-  */
 
+  /*
   it should "Iterate over rows and columns" in {
     wrapTester(
       chisel3.iotesters.Driver(() => new MatMul(rowDims, colDims)) { c =>
@@ -47,6 +46,7 @@ class MatMulSpec extends FlatSpec with Matchers {
       } should be(true)
     )
   }
+  */
 }
 
 object MatMulTests {

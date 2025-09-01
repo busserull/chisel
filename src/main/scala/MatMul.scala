@@ -25,10 +25,11 @@ class MatMul(val rowDimsA: Int, val colDimsA: Int) extends MultiIOModule {
     }
   )
 
-  // Matrices and Dot product engine
+  // Matrices
 
   val mat_a = Module(new Matrix(rowDimsA, colDimsA))
   val mat_b = Module(new Matrix(rowDimsA, colDimsA))
+
 
   // Reading controller
   
@@ -37,17 +38,18 @@ class MatMul(val rowDimsA: Int, val colDimsA: Int) extends MultiIOModule {
   val row = RegInit(UInt(32.W), 0.U)
   val (col, next_row) = Counter(true.B, colDimsA)
 
+
   // Multiplier and output
 
-  // val mult = Module(new DotProd(colDimsA))
+  val dot = Module(new DotProd(colDimsA))
 
-  // val mat_out = Module(new Matrix(rowDimsA, rowDimsA))
+  val mat_out = Module(new Matrix(rowDimsA, rowDimsA))
 
   val comp_row = RegInit(UInt(32.W), 0.U)
-  val (comp_col, next_comp_row) = Counter(!reading, rowDimsA)
+  val (comp_col, next_comp_row) = Counter(!reading && dot.io.outputValid, rowDimsA)
+
 
   // Read matrix A and B
-
 
   when(next_row){
     row := row + 1.U
@@ -78,10 +80,21 @@ class MatMul(val rowDimsA: Int, val colDimsA: Int) extends MultiIOModule {
     comp_row := comp_row + 1.U
   }
 
-  // mult.io.dataInA := mat_a.io.dataOut
-  // mult.io.dataInB := mat_b.io.dataOut
+  dot.io.dataInA := mat_a.io.dataOut
+  dot.io.dataInB := mat_b.io.dataOut
 
-  // io.dataOut := mult.io.dataOut
+  mat_out.io.colIdx := comp_col
+  mat_out.io.rowIdx := comp_row
+  mat_out.io.dataIn := dot.io.dataOut
+  mat_out.io.writeEnable := dot.io.outputValid
+
+  io.dataOut := dot.io.dataOut
+  io.outputValid := dot.io.outputValid && !reading
+
+
+  // when(mult.io.outputValid){
+  //   io.dataOut := mult.io.dataOut
+  // }
 
 
   debug.row := row
@@ -89,32 +102,4 @@ class MatMul(val rowDimsA: Int, val colDimsA: Int) extends MultiIOModule {
   debug.comp_row := comp_row
   debug.comp_col := comp_col
   debug.reading := reading
-
-  io.dataOut := io.dataInA + io.dataInB
-  io.outputValid := true.B
-
-  /*
-  val matrixA     = Module(new Matrix(rowDimsA, colDimsA)).io
-  val matrixB     = Module(new Matrix(rowDimsA, colDimsA)).io
-  val dotProdCalc = Module(new DotProd(colDimsA)).io
-
-  matrixA.dataIn      := 0.U
-  matrixA.rowIdx      := 0.U
-  matrixA.colIdx      := 0.U
-  matrixA.writeEnable := false.B
-
-  matrixB.rowIdx      := 0.U
-  matrixB.colIdx      := 0.U
-  matrixB.dataIn      := 0.U
-  matrixB.writeEnable := false.B
-
-  dotProdCalc.dataInA := 0.U
-  dotProdCalc.dataInB := 0.U
-
-  io.dataOut := 0.U
-  io.outputValid := false.B
-  */
-
-
-  // debug.myDebugSignal := false.B
 }

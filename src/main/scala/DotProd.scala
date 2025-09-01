@@ -17,7 +17,8 @@ class DotProd(val elements: Int) extends Module {
 
   val (counter, wrap) = Counter(true.B, elements)
 
-  val acc = RegInit(UInt(32.W))
+  // val acc = RegInit(UInt(32.W))
+  val acc = RegInit(0.U(32.W))
 
   acc := acc + io.dataInA * io.dataInB
 
